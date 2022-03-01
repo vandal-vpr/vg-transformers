@@ -95,7 +95,7 @@ Example with ResNet-18 + GeM + CAT :
 ``` bash
 python main_scripts/main_train.py \
 	--dataset_path <MSLS path>
-	--img_shape 384 384 \
+	--img_shape 480 640 \
 	--arch r18l3 --pooling gem --aggregation cat \
 	--train_batch_size 4 --nNeg 5 --seq_length 5 \
 	--optim adam --lr 0.0001
