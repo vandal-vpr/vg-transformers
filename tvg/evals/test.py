@@ -9,8 +9,6 @@ from torch.utils.data.dataset import Subset
 
 
 def test(args, eval_ds, model, pca=None):
-    if args.m100:
-        return test_m100(args, eval_ds, model)
     model = model.eval()
     outputdim = model.module.meta['outputdim']
     seq_len = args.seq_length
