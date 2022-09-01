@@ -8,7 +8,6 @@ from os.path import join, dirname, isfile
 import pandas as pd
 import utm
 import re
-from tvg.utils import get_all_datasets_path
 
 
 def get_dst_image_name(latitude, longitude, pano_id='', timestamp='', city='',
@@ -65,10 +64,13 @@ default_cities = {
     'val': ["cph", "sf"],
     'test': ["miami", "athens", "buenosaires", "stockholm", "bengaluru", "kampala"]
 }
-root = get_all_datasets_path()
+root = '' # insert here folder of mapillary dataset to format
+base_dst_folder = '' # insert here destination path of formatted dataset
+assert root != '', 'you should manually set the root dataset folder'
+assert base_dst_folder != '', 'you should manually set the destination dataset folder'
+
 csv_files_paths = sorted(glob(join(root, "*", "*", "*", "postprocessed.csv"),
                               recursive=True))
-base_dst_folder = '/home/gabrielet/datasets/msls_reformat'
 
 for csv_file_path in csv_files_paths:
     with open(csv_file_path, "r") as file:

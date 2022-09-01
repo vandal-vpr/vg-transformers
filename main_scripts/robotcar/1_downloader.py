@@ -42,27 +42,30 @@ def login_and_download(log_url, url, dump_to):
 
 
 login_url = "https://mrgdatashare.robots.ox.ac.uk/"
-SECRET_FILE = '/home/gabrielet/iros_ral/vg-transformers/main_scripts/robotcar/.secret'
+SECRET_FILE = '' # obtain the credentials from the url and put them in a plain txt file
+assert SECRET_FILE != '', 'you should set the path of the file containing credentials'
+
 out_dir = os.path.join(os.path.abspath(os.curdir), 'downloaded')
 os.makedirs(out_dir, exist_ok=True)
 PREFIX = '_stereo_left_'
-# dates = ['2015-03-17-11-08-44', '2014-12-16-18-44-24'] # train: (query - winter day, db - winter night)
-#dates = ['2014-11-18-13-20-12', '2014-11-21-16-07-03'] # val (query - fall day, db - fall dusk/rain)
-# dates = ['2015-07-08-13-37-17', '2014-11-14-16-34-33'] # test: (query - summer day, db - fall night)
-# try test again
-dates = ['2015-07-29-13-09-26', '2014-11-25-09-18-32'] # (query test - summer day; query val - fall day overcast)
+dates = [
+    ['2014-12-17-18-18-43', '2014-12-16-09-14-09'], # train: (query: winter rain night, db: winter day)
+    ['2015-02-03-08-45-10', '2015-11-13-10-28-08'], # val: (query: winter snow day, db: fall overcast day)
+    ['2014-12-16-18-44-24', '2014-11-18-13-20-12'], # test: (query: winter night, db: fall day)
+]
 
-for date in dates:
-    n_files = count_files(date=date, prefix=PREFIX)
-    filenames = [date + PREFIX + '0' + str(i) + '.tar' for i in range(1, n_files + 1)]
+for date_set in dates:
+    for date in dates:
+        n_files = count_files(date=date, prefix=PREFIX)
+        filenames = [date + PREFIX + '0' + str(i) + '.tar' for i in range(1, n_files + 1)]
 
-    meta_url = 'http://mrgdatashare.robots.ox.ac.uk:80/download/?filename=rtk.zip'
-    print(f"{str(datetime.now())[:19]}   "
-          f"    Sto scaricando i metadati")
-    login_and_download(login_url, meta_url, 'meta.zip')
-
-    for i, filename in enumerate(filenames):
-        url = f'http://mrgdatashare.robots.ox.ac.uk:80/download/?filename=datasets/{date}/{filename}'
+        meta_url = 'http://mrgdatashare.robots.ox.ac.uk:80/download/?filename=rtk.zip'
         print(f"{str(datetime.now())[:19]}   "
-              f"{i + 1}/{len(filenames)}    Sto scaricando {filename}")
-        login_and_download(login_url, url, filename)
+              f"    Sto scaricando i metadati")
+        login_and_download(login_url, meta_url, 'meta.zip')
+
+        for i, filename in enumerate(filenames):
+            url = f'http://mrgdatashare.robots.ox.ac.uk:80/download/?filename=datasets/{date}/{filename}'
+            print(f"{str(datetime.now())[:19]}   "
+                  f"{i + 1}/{len(filenames)}    Sto scaricando {filename}")
+            login_and_download(login_url, url, filename)
