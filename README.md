@@ -6,7 +6,7 @@
     <br/><em>Taxonomy of sequential descriptor methods.</em>
 </p>
 
-This is the official repository for the paper "Learning Sequential Descriptors for Sequence-based Visual Place Recognition".
+This is the official repository for the paper "[Learning Sequential Descriptors for Sequence-based Visual Place Recognition](https://arxiv.org/abs/2207.03868)".
 It can be used to reproduce results from the paper and experiment with a wide range of sequential descriptor methods for Visual Place Recognition. 
 
 
