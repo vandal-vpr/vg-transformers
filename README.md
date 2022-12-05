@@ -53,7 +53,13 @@ In our experiments, we used the following laps of Oxford RobotCar as train/valid
 	* queries: lap  2014-12-16-18-44-24 (winter night); 
 	* database: lap 2014-11-18-13-20-12 (fall day).
 
-To download and preprocess the dataset use the following commands:
+We provide the 2 pre-processed versions that we used in our experiments:
+* Fixed-Space sampling, keeping one frame every 2 meters: [link](https://drive.google.com/file/d/17QGrkRN9tZ88eLld4ptY6hMZOEhkvjoS/view?usp=sharing)
+* Fixed-Time sampling, keeping one frame every 3.6 seconds: [link](https://drive.google.com/file/d/1QlfV7fliuTl9AvHeuyjMLr4kV6BAJOfn/view?usp=sharing)
+
+The first one is more consistent with the MSLS setup. For the second one, the choice of the 3.6 seconds threshold was made to keep a comparable number of images with the first version.
+
+Alternatively, you can download the full,raw version of the dataset from the official website it and preprocess the dataset use the following commands:
 
 ``` bash 
 python main_scripts/robotcar/1_downloader.py
