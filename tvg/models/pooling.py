@@ -247,7 +247,12 @@ class SeqVLAD(nn.Module):
                 outputs = encoder(inputs)
                 if isinstance(encoder, ViTModel):
                     outputs = outputs.last_hidden_state[:, 1:, :]
-                norm_outputs = F.normalize(outputs, p=2, dim=1)
+                if self.transf_backbone:
+                    # if using a transformer backbone, normalization is done token-wise
+                    norm_outputs = F.normalize(outputs, p=2, dim=2)
+                else:
+                    norm_outputs = F.normalize(outputs, p=2, dim=1)
+
                 image_descriptors = norm_outputs.view(norm_outputs.shape[0], features_dim, -1).permute(0, 2, 1)
                 image_descriptors = image_descriptors.cpu().numpy()
                 batchix = iteration * args.infer_batch_size * descs_num_per_image
