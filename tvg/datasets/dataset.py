@@ -48,13 +48,33 @@ class BaseDataset(data.Dataset):
         self.seq_len = seq_len
         if cut_last_frame:
             self.seq_len += 1
-        pos_thresh = pos_thresh
-        neg_thresh = neg_thresh
+        self.base_transform = base_transform
 
         if not os.path.exists(self.dataset_folder): raise FileNotFoundError(
             f"Folder {self.dataset_folder} does not exist")
 
-        self.base_transform = base_transform
+        self.init_data(cities, split, pos_thresh, neg_thresh)
+        if reverse_frames:
+            self.db_paths = [",".join(path.split(',')[::-1]) for path in self.db_paths]
+        self.images_paths = self.db_paths + self.q_paths
+        self.database_num = len(self.db_paths)
+        self.queries_num = len(self.qIdx)
+
+        if cut_last_frame:
+            self.__cut_last_frame()
+
+    def init_data(self, cities, split, pos_thresh, neg_thresh):
+        if ('msls' in self.dataset_folder) and (split == 'train'):
+            cache_file = f'cache/msls_seq{self.seq_len}_{cities}.torch'
+            if os.path.isfile(cache_file):
+                logging.info(f'Loading cached data from {cache_file}...')
+                cache_dict = torch.load(cache_file)
+                self.__dict__.update(cache_dict)
+                return
+            else:
+                os.makedirs('cache', exist_ok=True)
+                logging.info('Data structures were not cached, building them now...')
+
         #### Read paths and UTM coordinates for all images.
         database_folder = join(self.dataset_folder, "database")
         queries_folder = join(self.dataset_folder, "queries")
@@ -71,10 +91,10 @@ class BaseDataset(data.Dataset):
         db_unique_idxs = np.unique([idx for seq_frames_idx in db_idx_frame_to_seq for idx in seq_frames_idx])
 
         self.database_utms = np.array(
-            [(path.split("@")[1], path.split("@")[2]) for path in all_db_paths[db_unique_idxs]]).astype(np.float)
+            [(path.split("@")[1], path.split("@")[2]) for path in all_db_paths[db_unique_idxs]]).astype(np.float64)
         self.queries_utms = np.array(
             [(path.split("@")[1], path.split("@")[2]) for path in all_q_paths[q_unique_idxs]]).astype(
-            np.float)
+            np.float64)
 
         knn = NearestNeighbors(n_jobs=-1)
         knn.fit(self.database_utms)
@@ -100,9 +120,8 @@ class BaseDataset(data.Dataset):
                 [p for pos in self.hard_positives_per_query[unique_q_frame_idxs] for p in pos])
 
             if len(p_uniq_frame_idxs) > 0:
-                # p_seq_idx = np.where(np.in1d(db_unique_idxs, p_uniq_frame_idxs))[0]
                 p_seq_idx = np.where(np.in1d(db_idx_frame_to_seq, db_unique_idxs[p_uniq_frame_idxs])
-                              .reshape(db_idx_frame_to_seq.shape))[0]
+                                     .reshape(db_idx_frame_to_seq.shape))[0]
 
                 self.qIdx.append(q)
                 self.pIdx.append(np.unique(p_seq_idx))
@@ -110,22 +129,28 @@ class BaseDataset(data.Dataset):
                 if split == 'train':
                     nonNeg_uniq_frame_idxs = np.unique(
                         [p for pos in self.soft_positives_per_query[unique_q_frame_idxs] for p in pos])
-                    nonNeg_seq_idx = np.where(np.in1d(db_unique_idxs, nonNeg_uniq_frame_idxs))
-                    self.nonNegIdx.append(nonNeg_seq_idx)
+                    nonNeg_seq_idx = np.where(np.in1d(db_idx_frame_to_seq, db_unique_idxs[nonNeg_uniq_frame_idxs])
+                                              .reshape(db_idx_frame_to_seq.shape))[0]
+                    self.nonNegIdx.append(np.unique(nonNeg_seq_idx))
             else:
                 self.q_without_pos += 1
 
-        if reverse_frames:
-            self.db_paths = [",".join(path.split(',')[::-1]) for path in self.db_paths]
-        self.images_paths = self.db_paths + self.q_paths
-        self.database_num = len(self.db_paths)
-        self.queries_num = len(self.qIdx)
-
         self.qIdx = np.array(self.qIdx)
         self.pIdx = np.array(self.pIdx, dtype=object)
-
-        if cut_last_frame:
-            self.__cut_last_frame()
+        if split == 'train':
+            save_dict = {
+                'db_paths': self.db_paths,
+                'q_paths': self.q_paths,
+                'database_utms': self.database_utms,
+                'queries_utms': self.queries_utms,
+                'hard_positives_per_query': self.hard_positives_per_query,
+                'soft_positives_per_query': self.soft_positives_per_query,
+                'qIdx': self.qIdx,
+                'pIdx': self.pIdx,
+                'nonNegIdx': self.nonNegIdx,
+                'q_without_pos': self.q_without_pos
+            }
+            torch.save(save_dict, cache_file)
 
     def __cut_last_frame(self):
         for i, seq in enumerate(self.images_paths):
@@ -141,7 +166,7 @@ class BaseDataset(data.Dataset):
             q_index = index - self.database_num
             index = self.qIdx[q_index] + self.database_num
 
-        img = torch.stack([self.base_transform(Image.open(im)) for im in self.images_paths[index].split(',')])
+        img = torch.stack([self.base_transform(Image.open(join(self.dataset_folder, im))) for im in self.images_paths[index].split(',')])
 
         return img, index, old_index
 
@@ -167,6 +192,7 @@ def build_sequences(folder, seq_len=3, cities='', desc='loading'):
     if cities != '':
         if not isinstance(cities, list):
             cities = [cities]
+    base_path = os.path.dirname(folder)
     paths = []
     all_paths = []
     idx_frame_to_seq = []
@@ -174,7 +200,8 @@ def build_sequences(folder, seq_len=3, cities='', desc='loading'):
     for seq in tqdm(seqs_folders, ncols=100, desc=desc):
         start_index = len(all_paths)
         frame_nums = np.array(list(map(lambda x: int(x.split('@')[4]), sorted(glob(join(seq, '*'))))))
-        seq_paths = np.array(sorted(glob(join(seq, '*'))))
+        full_seq_paths = sorted(glob(join(seq, '*')))
+        seq_paths = np.array([s_p.replace(f'{base_path}/', '') for s_p in full_seq_paths])
 
         if cities != '':
             sample_path = seq_paths[0]
@@ -224,12 +251,12 @@ class TrainDataset(BaseDataset):
                                                                     (1, 1, self.nNeg))
 
         query = torch.stack(
-            [self.base_transform(Image.open(im)) for im in self.q_paths[query_index].split(',')])
+            [self.base_transform(Image.open(join(self.dataset_folder, im))) for im in self.q_paths[query_index].split(',')])
 
         positive = torch.stack(
-            [self.base_transform(Image.open(im)) for im in self.db_paths[best_positive_index].split(',')])
+            [self.base_transform(Image.open(join(self.dataset_folder, im))) for im in self.db_paths[best_positive_index].split(',')])
 
-        negatives = [torch.stack([self.base_transform(Image.open(im))for im in self.db_paths[idx].split(',')])
+        negatives = [torch.stack([self.base_transform(Image.open(join(self.dataset_folder, im)))for im in self.db_paths[idx].split(',')])
                         for idx in neg_indexes]
 
         images = torch.stack((query, positive, *negatives), 0)
