@@ -27,14 +27,8 @@ The experiments in the paper use two main datasets Mapillary Street Level Sequen
 Download the dataset from <a href="https://github.com/mapillary/mapillary_sls">here</a> and then reformat the file using:
 
 ``` bash
-python main_scripts/msls/1_reformat_mapillary.py
-python main_scripts/msls/2_reformat_testset_msls.py
-```
-
-Moreover, to reduce the time needed to compute the sequences of a certain sequence length at each run it is possibile to create a cache file for the MSLS training set by using:
-
-``` bash
-python main_scripts/3_cache_dataset.py --seq <put your seq_len> --dataset_path <path to MSLS dataset> --save_to <output path>
+python main_scripts/msls/1_reformat_mapillary.py  original_MSLS/folder/path destination/folder/path
+python main_scripts/msls/2_reformat_testset_msls.py  reformatted/MSLS/path
 ```
 
 </details>
@@ -74,6 +68,14 @@ python main_scripts/robotcar/5_format_tree.py
 
 ## Run Experiments
 Once the datasets are ready, we can proceed running the experiments with the architecture of choice.
+
+**NB**: to build MSLS sequences, some heavy pre-processing to build data structures is needed. The dataset class will automatically cache this,
+so to compute them only the first time. Therefore the first experiment that you ever launch will take 2-3 hours to build this structures which will
+be saved in a `cache` directory, and following experiments will then start quickly. Note that this procedure caches everything with relative paths,
+therefore if you want to run experiments on multiple machines you can simply copy the `cache` directory.
+Finally, note that this data structures must be computed for each sequence length, so potentially in `cache` you will have a file for each sequence_length
+that you want to experiment with.
+
 **TODO one for each family of methods (also consider put an example with RobotCar)**
 
 Example with CCT-384 + SeqVLAD on MSLS:
