@@ -3,6 +3,16 @@ import shutil
 from tqdm import tqdm
 from os.path import join as pjoin
 import socket
+import argparse
+
+
+parser = argparse.ArgumentParser(description="""Script to create val and test splits as they are proposed in our paper. 
+The authors of MSLS never released the test set labels, so we decided to use the original validation set (`cph` and `sf`)
+as test set, and to use as validation `amsterdam` and `manila` which have similar statistics to the test set. 
+This script is meant to be executed AFTER `1_reformat_mapillary.py` 
+""", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('ds_folder', type=str,
+                    help='root directory of the reformatted MSLS. It will create inside of it val and test splits')
 
 
 def create_split_dir(split):
@@ -39,31 +49,38 @@ def move_seqs(src_split, dst_split, subset, sequences):
     for seq in tqdm(sequences, ncols=100):
         shutil.move(pjoin(base_src, seq), pjoin(base_dst, seq))
 
-
+# The dictionary below encodes the changes that will be made. From train to test nothing should be moved.
+# From train, the cities of amsterdam and manila must be moved to the val split.
+# Finally, the last line is commented, as in principle cph and sf should be moved from val to test,
+# but since they are the entirety of the old validation set, to do that it is enough to rename the 'val'
+# folder to 'test'
 moves = {
     ('train', 'test'): [],
     ('train', 'val'): ['amsterdam', 'manila'],
     # ('val', 'test'): ['cph', 'sf'],
 }
-import sys
-script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.path.dirname(script_dir))
-from tvg.utils import get_all_datasets_path
-DS_PATH = get_all_datasets_path()
 
-create_split_dir('train')
-create_split_dir('val')
-create_split_dir('test')
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-for move in moves:
-    src = move[0]
-    dst = move[1]
-    cities = moves[move]
+    DS_PATH = args.ds_folder
+    if not os.path.isdir(DS_PATH):
+        raise ValueError(f'The folder {root} does not exist')
 
-    for city in cities:
+    if os.path.isdir(pjoin(DS_PATH, 'test')):
+        shutil.rmtree(pjoin(DS_PATH, 'test'))
+    shutil.move(pjoin(DS_PATH, 'val'), pjoin(DS_PATH, 'test')) # -> this is doing : ('val', 'test'): ['cph', 'sf']
 
-        city_db_seqs = get_city_seqs(src, 'database', city)
-        city_q_seqs = get_city_seqs(src, 'queries', city)
+    create_split_dir('val')
+    for move in moves:
+        src = move[0]
+        dst = move[1]
+        cities = moves[move]
 
-        move_seqs(src, dst, 'database', city_db_seqs)
-        move_seqs(src, dst, 'queries', city_q_seqs)
+        for city in cities:
+
+            city_db_seqs = get_city_seqs(src, 'database', city)
+            city_q_seqs = get_city_seqs(src, 'queries', city)
+
+            move_seqs(src, dst, 'database', city_db_seqs)
+            move_seqs(src, dst, 'queries', city_q_seqs)

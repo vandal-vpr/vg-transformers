@@ -1,6 +1,5 @@
-from init_scripts import init_script
-init_script()
 import os
+import sys
 import shutil
 from glob import glob
 from tqdm import tqdm
@@ -8,7 +7,18 @@ from os.path import join, dirname, isfile
 import pandas as pd
 import utm
 import re
+import argparse
 
+parser = argparse.ArgumentParser(description="""Script to reformat the tree structure of MSLS dataset. Note that the 
+dataset will be original dataset will be copied in the new structure without deleting it. If you wish to make the process
+faster, and do not mind about deleting the original version of MSLS, you can specify --delete_old, that will `mv` 
+rather than copy""", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('root', type=str,
+                    help='root directory of the original MSLS. Refer to the MSLS website for downloading it')
+parser.add_argument('dest', type=str,
+                    help='This is the directory in which the new version of MSLS will be created.')
+parser.add_argument("--delete_old", action='store_true', default=False,
+                    help='If you specify this option, instead of duplicating the dataset it will only change the tree structure')
 
 def get_dst_image_name(latitude, longitude, pano_id='', timestamp='', city='',
                        seq_id='', frame_num='', extension=".jpg"):
@@ -64,54 +74,63 @@ default_cities = {
     'val': ["cph", "sf"],
     'test': ["miami", "athens", "buenosaires", "stockholm", "bengaluru", "kampala"]
 }
-root = '' # insert here folder of mapillary dataset to format
-base_dst_folder = '' # insert here destination path of formatted dataset
-assert root != '', 'you should manually set the root dataset folder'
-assert base_dst_folder != '', 'you should manually set the destination dataset folder'
 
-csv_files_paths = sorted(glob(join(root, "*", "*", "*", "postprocessed.csv"),
-                              recursive=True))
 
-for csv_file_path in csv_files_paths:
-    with open(csv_file_path, "r") as file:
-        postprocessed_lines = file.readlines()[1:]
-    with open(csv_file_path.replace("postprocessed", "raw"), "r") as file:
-        raw_lines = file.readlines()[1:]
-    assert len(raw_lines) == len(postprocessed_lines)
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-    seq_file = (join(dirname(csv_file_path), 'seq_info.csv'))
-    csv_dir = os.path.dirname(csv_file_path)
-    city_path, folder = os.path.split(csv_dir)
-    city = os.path.split(city_path)[1]
+    root = args.root
+    base_dst_folder = args.dest
 
-    seq_df = pd.read_csv(seq_file, index_col=[0])
-    seq_mappings = {}
-    for _, row in seq_df.iterrows():
-        """
-        if row.sequence_key in seq_mappings:
-            seq_mappings[row.key].append((row.sequence_key, row.frame_number))
-        else:"""
-        seq_mappings[row.key] = (row.sequence_key, row.frame_number)
+    if not os.path.isdir(root):
+        raise ValueError(f'The folder {root} does not exist')
+    if not os.path.isdir(base_dst_folder):
+        raise ValueError(f'The folder {base_dst_folder} does not exist')
 
-    folder = "database" if folder == "database" else "queries"
-    train_val = "train" if city in default_cities["train"] else "val"
-    dst_folder = os.path.join(base_dst_folder, train_val, folder)
+    csv_files_paths = sorted(glob(join(root, "*", "*", "*", "postprocessed.csv"), recursive=True))
+    for csv_file_path in csv_files_paths:
+        with open(csv_file_path, "r") as file:
+            postprocessed_lines = file.readlines()[1:]
+        with open(csv_file_path.replace("postprocessed", "raw"), "r") as file:
+            raw_lines = file.readlines()[1:]
+        assert len(raw_lines) == len(postprocessed_lines)
 
-    os.makedirs(dst_folder, exist_ok=True)
-    for postprocessed_line, raw_line in zip(tqdm(postprocessed_lines, desc=city), raw_lines):
-        _, pano_id, lon, lat, _, timestamp, is_panorama = raw_line.split(",")
-        if is_panorama == "True\n":
-            continue
-        timestamp = timestamp.replace("-", "")
+        seq_file = (join(dirname(csv_file_path), 'seq_info.csv'))
+        csv_dir = os.path.dirname(csv_file_path)
+        city_path, folder = os.path.split(csv_dir)
+        city = os.path.split(city_path)[1]
 
-        seq_id = seq_mappings[pano_id][0]
-        frame_num = seq_mappings[pano_id][1]
-        dst_image_name = get_dst_image_name(lat, lon, pano_id, timestamp=timestamp, city=city,
-                                            seq_id=seq_id, frame_num=frame_num)
+        seq_df = pd.read_csv(seq_file, index_col=[0])
+        seq_mappings = {}
+        for _, row in seq_df.iterrows():
+            """
+            if row.sequence_key in seq_mappings:
+                seq_mappings[row.key].append((row.sequence_key, row.frame_number))
+            else:"""
+            seq_mappings[row.key] = (row.sequence_key, row.frame_number)
 
-        seq_folder = join(dst_folder, seq_id)
-        os.makedirs(seq_folder, exist_ok=True)
+        folder = "database" if folder == "database" else "queries"
+        train_val = "train" if city in default_cities["train"] else "val"
+        dst_folder = os.path.join(base_dst_folder, train_val, folder)
 
-        src_image_path = os.path.join(os.path.dirname(csv_file_path), 'images', f'{pano_id}.jpg')
-        dst_image_path = os.path.join(seq_folder, dst_image_name)
-        _ = shutil.copy(src_image_path, dst_image_path)
+        os.makedirs(dst_folder, exist_ok=True)
+        for postprocessed_line, raw_line in zip(tqdm(postprocessed_lines, desc=city), raw_lines):
+            _, pano_id, lon, lat, _, timestamp, is_panorama = raw_line.split(",")
+            if is_panorama == "True\n":
+                continue
+            timestamp = timestamp.replace("-", "")
+
+            seq_id = seq_mappings[pano_id][0]
+            frame_num = seq_mappings[pano_id][1]
+            dst_image_name = get_dst_image_name(lat, lon, pano_id, timestamp=timestamp, city=city,
+                                                seq_id=seq_id, frame_num=frame_num)
+
+            seq_folder = join(dst_folder, seq_id)
+            os.makedirs(seq_folder, exist_ok=True)
+
+            src_image_path = os.path.join(os.path.dirname(csv_file_path), 'images', f'{pano_id}.jpg')
+            dst_image_path = os.path.join(seq_folder, dst_image_name)
+            if not args.delete_old:
+                _ = shutil.copy(src_image_path, dst_image_path)
+            else:
+                _ = shutil.move(src_image_path, dst_image_path)
