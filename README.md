@@ -64,7 +64,29 @@ python main_scripts/robotcar/5_format_tree.py
 ```
 </details>
 
-**TODO consider to put all steps in a single script if they do not require particular arguments** 
+## Model zoo
+
+We are currently exploring hosting options, so this is a partial list of models. More models will be added soon!!
+
+<details>
+    <summary><b>Pretrained models with SeqVLAD and different backbones</b></summary></br>
+    Pretained networks employing different backbones.</br></br>
+	<table>
+		<tr>
+			<th rowspan=2>Model</th>
+			<th colspan="3">Training on MSLS, seq len 5</th>
+	 	</tr>
+	 	<tr>
+	   		<td>MSLS (R@1)</td>
+	   		<td>Download</td>
+	 	</tr>
+		<tr>
+			<td>CCT384 + SeqVLAD</td>
+			<td>89.6</td>
+			<td><a href="https://drive.google.com/file/d/16n6CL2t-asQ_tf8x4ZyJT_Y4UQQedsxh/view?usp=sharing">[Link]</a></td>
+	 	</tr>
+	</table>
+</details>
 
 ## Run Experiments
 Once the datasets are ready, we can proceed running the experiments with the architecture of choice.
@@ -127,7 +149,7 @@ python main_scripts/evaluation.py \
 ```
 
  
-#### Other realesed Projects
+#### Other related Projects
 
 [Deep Visual Geo-Localization Benchmark](https://github.com/gmberton/benchmarking_vg)
 
