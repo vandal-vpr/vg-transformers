@@ -159,3 +159,19 @@ python main_scripts/evaluation.py \
 [Official SeqMatchNet implementation](https://github.com/oravus/SeqMatchNet)
 
 [CCT repository](https://github.com/SHI-Labs/Compact-Transformers)
+
+
+## Cite
+Here is the bibtex to cite our paper
+```
+@article{Mereu_2022_seqvlad,
+  author={Mereu, Riccardo and Trivigno, Gabriele and Berton, Gabriele and Masone, Carlo and Caputo, Barbara},
+  journal={IEEE Robotics and Automation Letters},
+  title={Learning Sequential Descriptors for Sequence-Based Visual Place Recognition}, 
+  year={2022},
+  volume={7},
+  number={4},
+  pages={10383-10390},
+  doi={10.1109/LRA.2022.3194310}
+}
+```
