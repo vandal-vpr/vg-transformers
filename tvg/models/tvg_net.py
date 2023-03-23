@@ -156,8 +156,7 @@ def get_encoder(args):
                         params.requires_grad = True
         args.features_dim = 384
         return encoder
-    elif args.arch.startswith('Official-timesf'):
-        # it's a TimeSformer
+    elif args.arch == 'timesformer':
         assert args.img_shape[0] == args.img_shape[1]
         pre_trained = '' if args.pretrain_model is None else args.pretrain_model
         encoder = OfficialTimeSformer(img_size=args.img_shape[0],

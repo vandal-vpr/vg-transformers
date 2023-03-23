@@ -116,7 +116,7 @@ Example with TimeSformer:
 python main_scripts/main_train.py \
 	--dataset_path <MSLS path>
 	--img_shape 224 224 \
-	--arch timesformer --aggregation none \
+	--arch timesformer --aggregation _ \
 	--train_batch_size 4 --nNeg 5 --seq_length 5 \
 	--optim adam --lr 0.0001
 ```

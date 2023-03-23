@@ -359,6 +359,7 @@ class PCADataset(data.Dataset):
                  seq_len=3):
         super().__init__()
         self.seq_len = seq_len
+
         if not os.path.exists(dataset_folder):
             raise FileNotFoundError(f"Folder {dataset_folder} does not exist.")
         self.base_transform = base_transform
@@ -382,7 +383,7 @@ class PCADataset(data.Dataset):
 
     def __getitem__(self, index):
         # Note MSLSBase uses an old_index variable that is also returned
-        img = torch.stack([self.base_transform(Image.open(path)) for path in self.db_paths[index].split(',')])
+        img = torch.stack([self.base_transform(Image.open(join(self.dataset_folder, path))) for path in self.db_paths[index].split(',')])
         return img
 
     def __len__(self):

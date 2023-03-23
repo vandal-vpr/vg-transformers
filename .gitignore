@@ -12,6 +12,7 @@ logs/
 out.txt
 vit_legion.job
 ign*.*
+cache
 *.pkl
 testing*.py
 *dirty*.py
