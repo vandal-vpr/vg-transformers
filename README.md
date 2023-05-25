@@ -108,7 +108,7 @@ python main_scripts/main_train.py \
 	--arch cct384 --aggregation seqvlad \
 	--trunc_te 8 --freeze_te 1 \
 	--train_batch_size 4 --nNeg 5 --seq_length 5 \
-	--optim adam --lr 0.0001
+	--optim adam --lr 0.00001
 ```
 
 Example with TimeSformer:
@@ -118,7 +118,7 @@ python main_scripts/main_train.py \
 	--img_shape 224 224 \
 	--arch timesformer --aggregation _ \
 	--train_batch_size 4 --nNeg 5 --seq_length 5 \
-	--optim adam --lr 0.0001
+	--optim adam --lr 0.00001
 ```
 
 Example with ResNet-18 + GeM + CAT :
@@ -128,7 +128,7 @@ python main_scripts/main_train.py \
 	--img_shape 480 640 \
 	--arch r18l3 --pooling gem --aggregation cat \
 	--train_batch_size 4 --nNeg 5 --seq_length 5 \
-	--optim adam --lr 0.0001
+	--optim adam --lr 0.00001
 ```
 
 ### Add PCA
