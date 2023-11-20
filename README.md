@@ -67,6 +67,7 @@ python main_scripts/robotcar/5_format_tree.py
 ## Model zoo
 
 We are currently exploring hosting options, so this is a partial list of models. More models will be added soon!!
+If you need any particular model feel free to open an issue and we will provide it
 
 <details>
     <summary><b>Pretrained models with SeqVLAD and different backbones</b></summary></br>
@@ -98,7 +99,7 @@ therefore if you want to run experiments on multiple machines you can simply cop
 Finally, note that this data structures must be computed for each sequence length, so potentially in `cache` you will have a file for each sequence_length
 that you want to experiment with.
 
-**TODO one for each family of methods (also consider put an example with RobotCar)**
+**TODO one for each family of methods**
 
 Example with CCT-384 + SeqVLAD on MSLS:
 ``` bash 
@@ -130,6 +131,13 @@ python main_scripts/main_train.py \
 	--train_batch_size 4 --nNeg 5 --seq_length 5 \
 	--optim adam --lr 0.00001
 ```
+#### Experiments on Robotcar
+
+For experiments on Robotcar, we did not change any hyperparameters wrt experiments on MSLS. Thus you can simply select the configuration
+of backbone-pooling-aggregation that you want, like in the examples above, and then replace:
+ --dataset ~~MSLS path~~ with `--dataset <Robotcar path> `
+Follow the instructions above to download the dataset
+
 
 ### Add PCA
 To add the PCA to SeqVLAD or CAT models use:
